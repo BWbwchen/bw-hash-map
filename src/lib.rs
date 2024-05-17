@@ -1,18 +1,17 @@
 use std::{
     borrow::Borrow,
     hash::{DefaultHasher, Hash, Hasher},
+    mem::replace,
 };
 
-struct HashMapEntry<K, V> {
-    k: K,
-    v: V,
-}
+pub mod index;
+pub mod iter;
 
 // TODO: right now, we don't consider the resize mechanism.
 const DEFAULT_NUM_BUCKET: usize = 53;
 
 pub struct HashMap<K, V> {
-    storage: Vec<Vec<HashMapEntry<K, V>>>,
+    storage: Vec<Vec<(K, V)>>,
     // Number of HashMapEntry in the HashMap
     count: usize,
 }
@@ -47,13 +46,16 @@ impl<K, V> HashMap<K, V> {
     /// - v, if this key is exist in the map, the corresponding value is updated and return the old valud.
     pub fn insert(&mut self, k: K, v: V) -> Option<V>
     where
-        K: Hash,
+        K: Hash + Eq,
     {
         let idx = self.get_ht(&k);
-        self.storage[idx].push(HashMapEntry { k, v });
+        for (vk, vv) in self.storage[idx].iter_mut() {
+            if *vk == k {
+                return Some(replace(vv, v));
+            }
+        }
+        self.storage[idx].push((k, v));
         self.count += 1;
-
-        // TODO: suppose that there has no duplicate key.
         None
     }
 
@@ -81,9 +83,9 @@ impl<K, V> HashMap<K, V> {
         if self.storage[idx].is_empty() {
             return None;
         } else {
-            let hm_idx = self.storage[idx].iter().position(|e| e.k.borrow() == k)?;
+            let hm_idx = self.storage[idx].iter().position(|e| e.0.borrow() == k)?;
             self.count -= 1;
-            return Some(self.storage[idx].swap_remove(hm_idx).v);
+            return Some(self.storage[idx].swap_remove(hm_idx).1);
         }
     }
 
@@ -101,8 +103,8 @@ impl<K, V> HashMap<K, V> {
         } else {
             return self.storage[idx]
                 .iter()
-                .find(|e| e.k.borrow() == k)
-                .map(|hme| hme.v.borrow());
+                .find(|e| e.0.borrow() == k)
+                .map(|hme| hme.1.borrow());
         }
     }
 }
@@ -159,5 +161,40 @@ mod test {
         for (id, &book) in to_find.iter().enumerate() {
             assert_eq!(book_reviews.get(book).is_some(), to_find_answer_is_some[id]);
         }
+
+        // Look up the value for a key (will panic if the key is not found).
+        assert_eq!(
+            book_reviews["Pride and Prejudice"],
+            "Very enjoyable.".to_string()
+        );
+
+        let review_answer = ["My favorite book.", "Masterpiece.", "Very enjoyable."];
+        let mut idx = 0;
+        for (_, review) in &book_reviews {
+            assert_eq!(review, review_answer[idx]);
+            idx += 1;
+        }
+
+        let review_answer = ["My favorite book.", "Masterpiece.", "Very enjoyable."];
+        for (idx, (_, review)) in book_reviews.into_iter().enumerate() {
+            assert_eq!(review, review_answer[idx]);
+        }
+    }
+
+    #[test]
+    fn test_insert_update() {
+        let mut hm = HashMap::new();
+
+        hm.insert(3, 3);
+        assert_eq!(hm.get(&3), Some(&3));
+        hm.insert(3, 4);
+        assert_eq!(hm.get(&3), Some(&4));
+
+        let mut hm = HashMap::new();
+
+        hm.insert("Hello", 3);
+        assert_eq!(hm.get("Hello"), Some(&3));
+        hm.insert("Hello", 4);
+        assert_eq!(hm.get("Hello"), Some(&4));
     }
 }

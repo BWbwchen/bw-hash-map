@@ -46,10 +46,15 @@ fn main() {
     }
 
     // Look up the value for a key (will panic if the key is not found).
-    // println!("Review for Jane: {}", book_reviews["Pride and Prejudice"]);
+    println!("Review for Jane: {}", book_reviews["Pride and Prejudice"]);
 
     // Iterate over everything.
-    // for (book, review) in &book_reviews {
-    //     println!("{book}: \"{review}\"");
-    // }
+    for (book, review) in &book_reviews {
+        println!("{book}: \"{review}\"");
+    }
+
+    // Iterate over everything.
+    for (book, review) in book_reviews {
+        println!("{book}: \"{review}\"");
+    }
 }
