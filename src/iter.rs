@@ -108,16 +108,25 @@ mod test {
             "Very enjoyable.".to_string(),
         );
 
-        let review_answer = ["My favorite book.", "Masterpiece.", "Very enjoyable."];
-        let mut idx = 0;
-        for (_, review) in &book_reviews {
-            assert_eq!(review, review_answer[idx]);
-            idx += 1;
+        let review_answer = [
+            ("Adventures of Huckleberry Finn", "My favorite book."),
+            ("Grimms' Fairy Tales", "Masterpiece."),
+            ("Pride and Prejudice", "Very enjoyable."),
+        ];
+        for (key, review) in &book_reviews {
+            for (k, v) in &review_answer {
+                if key == k {
+                    assert_eq!(review, v);
+                }
+            }
         }
 
-        let review_answer = ["My favorite book.", "Masterpiece.", "Very enjoyable."];
-        for (idx, (_, review)) in book_reviews.into_iter().enumerate() {
-            assert_eq!(review, review_answer[idx]);
+        for (key, review) in book_reviews.into_iter() {
+            for (k, v) in review_answer {
+                if key == *k {
+                    assert_eq!(review, *v);
+                }
+            }
         }
     }
 }

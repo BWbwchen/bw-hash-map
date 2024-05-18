@@ -1,6 +1,8 @@
 use bw_hash_map::HashMap;
+use env_logger;
 
 fn main() {
+    env_logger::init();
     // Type inference lets us omit an explicit type signature (which
     // would be `HashMap<String, String>` in this example).
     let mut book_reviews = HashMap::new();
